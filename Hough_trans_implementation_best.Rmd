@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(terra)
 library(raster)
 library(spatstat)
+# test comment
 spatstat.options("monochrome" = TRUE)
 spatstat.options(transparent=FALSE)
 ```
