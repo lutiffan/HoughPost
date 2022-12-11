@@ -107,7 +107,8 @@ m_b_calculator <- function(theta, rho) {
 
 # Raster image-based accumulator function
 # d defined as d = sqrt((ymax - ymin)^2 + (xmax- xmin)^2)
-raster_accumulator <- function(hs_points, d, n_theta_steps = 180, n_theta_cells = 180, n_rho_cells = 180, expected_n_line = 30) {
+raster_accumulator <- function(hs_points, d, n_theta_steps = 180, n_theta_cells = 180, n_rho_cells = 180, expected_n_line = 30, ymax, ymin) {
+
   # raster() sets up a "frame" for images. Important to choose correct dimensions
   # For poorly understood reasons, a y range of 0.75(-d, d) results in good accuracy
   raster_base <- raster(ncol = n_theta_cells, nrow = n_rho_cells,
@@ -184,18 +185,18 @@ tidy_up <- function(param_estimates, m_sep_threshold = (pi/180), b_sep_threshold
 
 # Wrapper function for all Hough transform functions
 # Assumes first column of data is x coordinates, second column is y coordinates
-hough_line_detection <- function(points, xlim = c(-100, 100), num_theta_steps = 180, plot_hs = TRUE, n_theta_cells = 180, n_rho_cells = 180, expected_n_line = 30, tidy_up = TRUE, m_sep_threshold = pi/180, b_sep_threshold = NULL) {
+hough_line_detection <- function(points, xlim = c(-1000, 1000), num_theta_steps = 180, plot_hs = TRUE, n_theta_cells = 180, n_rho_cells = 180, expected_n_line = 30, tidy_up_lines = TRUE, m_sep_threshold = pi/180, b_sep_threshold = NULL) {
   xmin <- xlim[1]; xmax <- xlim[2]
   ymin <- min(points[,2]); ymax <- max(points[,2])
   d <- sqrt((ymax - ymin)^2 + (xmax - xmin)^2)
-  
+
   hs <- hough_space(cbind(points[,1], points[,2]), plot = plot_hs)
-  accumulator <- raster_accumulator(hs, d)
-  
-  if (!tidy_up) {
-    plot(points[,1], data_points[,2], ylim=c(ymin*1.5, ymax*1.5))
-    for (i in 1:nrow(params)) {
-      abline(params[i, 2], params[i, 1])
+  accumulator <- raster_accumulator(hs, d, ymax = ymax, ymin = ymin)
+
+  if (!tidy_up_lines) {
+    plot(points[,1], points[,2], ylim=c(ymin*1.5, ymax*1.5))
+    for (i in 1:nrow(accumulator)) {
+      abline(accumulator[i, 2], accumulator[i, 1])
     } 
   } else {
     if (is.null(b_sep_threshold)) b_sep_threshold = 2*(ymax-ymin)/n_rho_cells
@@ -214,14 +215,14 @@ Test functions
 set.seed(615)
 xmin <- -1000; xmax <- 1000
 r_points <- random_lines_polar(nline = 3, npoints = 200, xlim = c(xmin, xmax), plot = TRUE, percentnoise = 0.01)
-ymin <- min(r_points$y_coords);ymax <- max(r_points$y_coords)
-d <- sqrt((ymax - ymin)^2 + (xmax- xmin)^2)
+#ymin <- min(r_points$y_coords);ymax <- max(r_points$y_coords)
+#d <- sqrt((ymax - ymin)^2 + (xmax- xmin)^2)
 
 #hs_test <- hough_space(cbind(r_points[["x_coords"]], r_points[["y_coords"]]), plot = TRUE)
 #accumulator_test <- raster_accumulator(hs_test, d)
 #tidied_params <- tidy_up(accumulator_test[,1:2], pi/180, 2*(ymax-ymin)/nrow(accumulation_mat))
 
-hough_line_detection(points = cbind(r_points[["x_coords"]], r_points[["y_coords"]]), xlim = c(xmin, xmax), expected_n_line = 10)
+hough_line_detection(points = cbind(r_points[["x_coords"]], r_points[["y_coords"]]), xlim = c(xmin, xmax), expected_n_line = 5)
 
 ```
 
